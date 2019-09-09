@@ -1,0 +1,14 @@
+<RCC>
+  <qresource prefix="newPrefix">
+    <file>faction.png</file>
+    <file>button.png</file>
+    <file>clear.png</file>
+    <file>back3.png</file>
+    <file>back4.png</file>
+    <file>back5.png</file>
+    <file>back6.png</file>
+      <file>back1.png</file>
+      <file>login.png</file>
+      <file>mima.png</file>
+  </qresource>
+</RCC>
