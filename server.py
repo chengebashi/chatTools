@@ -3,7 +3,6 @@ import json
 import threading
 import smtp_mail
 import server_mysql
-import re
 
 
 sock = socket.socket()

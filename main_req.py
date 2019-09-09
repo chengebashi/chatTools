@@ -17,9 +17,7 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
     '''定义一个聊天窗口类，显示聊天框'''
     info2 = ''
     info3 = ''
-    info7, info8, info9, info10, info11  = '', '', '', '', ''
     dyname_win = []
-    push_list = []
 
     def __init__(self):
         super(MyQtWidgets, self).__init__()
@@ -31,38 +29,21 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
         self.mythread2.signal.connect(self.callback2)
         self.mythread.start()
         self.mythread2.start()
-        self.push_list.append(self.pushButton_7)
-        self.push_list.append(self.pushButton_8)
-        self.push_list.append(self.pushButton_9)
-        self.push_list.append(self.pushButton_10)
-        self.push_list.append(self.pushButton_11)
-        MyQtWidgets.info7 = Myrecvtalk()
-        MyQtWidgets.info8 = Myrecvtalk()
-        MyQtWidgets.info9 = Myrecvtalk()
-        MyQtWidgets.info10 = Myrecvtalk()
-        MyQtWidgets.info11 = Myrecvtalk()
-        MyQtWidgets.dyname_win.append([MyQtWidgets.info7, 0, ''])
-        MyQtWidgets.dyname_win.append([MyQtWidgets.info8, 0, ''])
-        MyQtWidgets.dyname_win.append([MyQtWidgets.info9, 0, ''])
-        MyQtWidgets.dyname_win.append([MyQtWidgets.info10, 0, ''])
-        MyQtWidgets.dyname_win.append([MyQtWidgets.info11, 0, ''])
 
 
 
     def callback(self, tmp):  # 这里的 i 就是任务线程传回的数据
         try:
             if 'active_people' in tmp:             #返回显示在线人数
-                for i in range(len(self.push_list)):
-                    clear = self.push_list[i]
-                    clear.setText('')
                 tmp = json.loads(tmp)
-                j = tmp['active_people']
-                peoples = '在线人数:' + str(len(j)) + '人'
+                list = tmp['active_people']     #在线人数列表
+                self.listWidget.clear()
+                self.listWidget.addItems(list)
+                peoples = '在线人数:' + str(len(list)) + '人'
                 self.textBrowser_4.setText(peoples)
-                for i in range(len(j)):      #为每个用户按钮附上用户名
-                    push = self.push_list[i]
-                    push.setText(j[i])
-                    MyQtWidgets.dyname_win[i][2] = j[i]      #动态初始化主列表为每个用户分配一个对象跟窗口状态
+                for i, j in enumerate(list):      #为每个用户按钮附上用户名
+                    j = Myrecvtalk()
+                    MyQtWidgets.dyname_win.append([j, list[i], 0])      #每个用户的对象名，用户名，窗口状态0/1（0表示窗口关闭，1表示开启）
 
             elif 'down_line' in tmp:
                 dict_name = json.loads(tmp)
@@ -83,17 +64,16 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
                 other_name = request_name['person_talk']
                 news = request_name['oneToone_talk']
                 news = other_name + ':' + news
-                list = filter(lambda x: other_name == x[2], MyQtWidgets.dyname_win)    #判断来自对方的消息的窗口是否打开，如果打开则在上面添加消息，否则重新打开窗口添加消息
-                for li in list:
-                    obj = li
-                if obj[1] == 1:    #当窗口存在
-                    obj[0].title(other_name)
+                ld = filter(lambda x: other_name == x[1], MyQtWidgets.dyname_win)    #判断来自对方的消息的窗口是否打开，如果打开则在上面添加消息，否则重新打开窗口添加消息
+                for l in ld:
+                    obj = l
+                if obj[2] == 1:    #当窗口存在直接添加消息
                     obj[0].textBrowser.append(news)
 
-                elif obj[1] == 0:   #当窗口不存在
-                    obj[1] = 1
+                elif obj[2] == 0:   #当窗口不存在
+                    obj[2] = 1    #打开窗口
                     obj[0].show()
-                    obj[0].title(other_name)
+                    obj[0].label.setText(other_name)
                     obj[0].textBrowser.append(news)
 
 
@@ -187,111 +167,24 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
     def send_file(self):
         pass
 
-    def user_1(self):    #按钮事件1（用户）
+    def change(self,item):    #按钮事件1（用户）
         try:
             box = QtWidgets.QMessageBox()
-            word = self.pushButton_7.text()
-            if word == self.info3:    #不能点自己
-                pass
-            elif word is not '':      #不能点空按钮
-                list = filter(lambda x: word == x[2], MyQtWidgets.dyname_win)
+            word = item.text()
+            if word != self.info3:    #不能点自己
+                list = filter(lambda x: word == x[1], MyQtWidgets.dyname_win)
                 for li in list:
                     obj = li
-                if obj[1] == 1:
+                if obj[2] == 1:
                     box.information(self, "温馨提示", " 别点了，您正在和他聊天呢!")
                 else:
                     obj[0].show()
                     obj[0].textBrowser.clear()
                     obj[0].label.setText(word)
-                    obj[1] = 1
+                    obj[2] = 1
 
         except Exception as f:
             print(f)
-
-    def user_2(self):    #按钮事件2（用户）
-        try:
-            box = QtWidgets.QMessageBox()
-            word = self.pushButton_8.text()
-            if word == self.info3:
-                pass
-            elif word is not '':
-                list = filter(lambda x: word == x[2], MyQtWidgets.dyname_win)
-                for li in list:
-                    obj = li
-                if obj[1] == 1:
-                    box.information(self, "温馨提示", " 别点了，您正在和他聊天呢!")
-                else:
-                    obj[0].show()
-                    obj[0].textBrowser.clear()
-                    obj[0].label.setText(word)
-                    obj[1] = 1
-
-        except Exception as f:
-            print(f)
-
-    def user_3(self):    #按钮事件3（用户）
-        try:
-            box = QtWidgets.QMessageBox()
-            word = self.pushButton_9.text()
-            if word == self.info3:
-                pass
-            elif word is not '':
-                list = filter(lambda x: word == x[2], MyQtWidgets.dyname_win)
-                for li in list:
-                    obj = li
-                if obj[1] == 1:
-                    box.information(self, "温馨提示", " 别点了，您正在和他聊天呢!")
-                else:
-                    obj[0].show()
-                    obj[0].textBrowser.clear()
-                    obj[0].label.setText(word)
-                    obj[1] = 1
-
-        except Exception as f:
-            print(f)
-
-    def user_4(self):    #按钮事件4（用户）
-        try:
-            box = QtWidgets.QMessageBox()
-            word = self.pushButton_10.text()
-            if word == self.info3:
-                pass
-            elif word is not '':
-                list = filter(lambda x: word == x[2], MyQtWidgets.dyname_win)
-                for li in list:
-                    obj = li
-                if obj[1] == 1:
-                    box.information(self, "温馨提示", " 别点了，您正在和他聊天呢!")
-                else:
-                    obj[0].show()
-                    obj[0].textBrowser.clear()
-                    obj[0].label.setText(word)
-                    obj[1] = 1
-
-        except Exception as f:
-            print(f)
-
-    def user_5(self):    #按钮事件5（用户）
-        try:
-            box = QtWidgets.QMessageBox()
-            word = self.pushButton_11.text()
-            if word == self.info3:
-                pass
-            elif word is not '':
-                list = filter(lambda x: word == x[2], MyQtWidgets.dyname_win)
-                for li in list:
-                    obj = li
-                if obj[1] == 1:
-                    box.information(self, "温馨提示", " 别点了，您正在和他聊天呢!")
-                else:
-                    obj[0].show()
-                    obj[0].textBrowser.clear()
-                    obj[0].label.setText(word)
-                    obj[1] = 1
-
-        except Exception as f:
-            print(f)
-
 
 
 
@@ -559,20 +452,19 @@ class Myrecvtalk(QtWidgets.QMainWindow, Ui_Form6):
         super(Myrecvtalk, self).__init__()
         self.setupUi(self)
 
-
-    def title(self, title):
-        self.label.setText(title)
-
     def recv_action(self, recv_news):
         self.textBrowser.append(recv_news)
 
     def closed(self):
-        word = self.label.text()
-        self.close()
-        list = filter(lambda x: word == x[2], MyQtWidgets.dyname_win)
-        for li in list:
-            obj = li
-        obj[1] = 0
+        try:
+            word = self.label.text()
+            self.close()
+            list = filter(lambda x: word == x[1], MyQtWidgets.dyname_win)
+            for li in list:
+                obj = li
+            obj[2] = 0
+        except Exception as e:
+            print(e)
 
     def min(self):
         self.showMinimized()

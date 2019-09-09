@@ -233,65 +233,38 @@ class Ui_Form1(object):
 
 
 
-        self.frame_4 = QtWidgets.QFrame(self.frame)
-        self.frame_4.setGeometry(QtCore.QRect(559, 99, 281, 541))
-        self.frame_4.setStyleSheet("background-color: rgb(255, 255, 255);\n"
-                                   "border:none;\n")
-        self.frame_4.setFrameShape(QtWidgets.QFrame.StyledPanel)
-        self.frame_4.setFrameShadow(QtWidgets.QFrame.Raised)
-        self.frame_4.setObjectName("frame_4")
+        # self.frame_4 = QtWidgets.QFrame(self.frame)
+        # self.frame_4.setGeometry(QtCore.QRect(559, 99, 281, 541))
+        # self.frame_4.setStyleSheet("background-color: rgb(255, 255, 255);\n"
+        #                            "border:none;\n")
+        # self.frame_4.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        # self.frame_4.setFrameShadow(QtWidgets.QFrame.Raised)
+        # self.frame_4.setObjectName("frame_4")
+        #
+        # op = QtWidgets.QGraphicsOpacityEffect()
+        # op.setOpacity(0.7)
+        # self.frame_4.setGraphicsEffect(op)
+        # self.frame_4.setAutoFillBackground(True)
+
+        self.listWidget = QtWidgets.QListWidget(Form)
+        self.listWidget.setGeometry(QtCore.QRect(549, 99, 282, 542))
+        font = QtGui.QFont()
+        font.setFamily("幼圆")
+        font.setPointSize(13)
+        self.listWidget.setFont(font)
+        self.listWidget.setStyleSheet("background-color: rgb(255, 255, 255);\n"
+                                      "border:none;\n")
+        self.listWidget.setObjectName("listWidget")
 
         op = QtWidgets.QGraphicsOpacityEffect()
         op.setOpacity(0.7)
-        self.frame_4.setGraphicsEffect(op)
-        self.frame_4.setAutoFillBackground(True)
+        self.listWidget.setGraphicsEffect(op)
+        self.listWidget.setAutoFillBackground(True)
 
 
-        self.pushButton_7 = QtWidgets.QPushButton(self.frame_4)
-        self.pushButton_7.setGeometry(QtCore.QRect(0, 0, 280, 30))
-        font = QtGui.QFont()
-        font.setFamily("幼圆")
-        font.setPointSize(11)
-        self.pushButton_7.setFont(font)
-        self.pushButton_7.setStyleSheet("border:none;")
-        self.pushButton_7.setObjectName("pushButton_7")
 
 
-        self.pushButton_8 = QtWidgets.QPushButton(self.frame_4)
-        self.pushButton_8.setGeometry(QtCore.QRect(0, 30, 280, 30))
-        font = QtGui.QFont()
-        font.setFamily("幼圆")
-        font.setPointSize(11)
-        self.pushButton_8.setFont(font)
-        self.pushButton_8.setStyleSheet("border:none;")
-        self.pushButton_8.setObjectName("pushButton_8")
 
-        self.pushButton_9 = QtWidgets.QPushButton(self.frame_4)
-        self.pushButton_9.setGeometry(QtCore.QRect(0, 60, 280, 30))
-        font = QtGui.QFont()
-        font.setFamily("幼圆")
-        font.setPointSize(11)
-        self.pushButton_9.setFont(font)
-        self.pushButton_9.setStyleSheet("border:none;")
-        self.pushButton_9.setObjectName("pushButton_9")
-
-        self.pushButton_10 = QtWidgets.QPushButton(self.frame_4)
-        self.pushButton_10.setGeometry(QtCore.QRect(0, 90, 280, 30))
-        font = QtGui.QFont()
-        font.setFamily("幼圆")
-        font.setPointSize(11)
-        self.pushButton_10.setFont(font)
-        self.pushButton_10.setStyleSheet("border:none;")
-        self.pushButton_10.setObjectName("pushButton_10")
-
-        self.pushButton_11 = QtWidgets.QPushButton(self.frame_4)
-        self.pushButton_11.setGeometry(QtCore.QRect(0, 120, 280, 30))
-        font = QtGui.QFont()
-        font.setFamily("幼圆")
-        font.setPointSize(11)
-        self.pushButton_11.setFont(font)
-        self.pushButton_11.setStyleSheet("border:none;")
-        self.pushButton_11.setObjectName("pushButton_11")
 
         self.retranslateUi(Form)
         self.pushButton.clicked.connect(Form.closed)
@@ -301,33 +274,29 @@ class Ui_Form1(object):
         self.pushButton_2.clicked.connect(Form.send_action)
         self.pushButton_3.clicked.connect(Form.recv_file)
         self.pushButton_4.clicked.connect(Form.send_file)
-        self.pushButton_7.clicked.connect(Form.user_1)
-        self.pushButton_8.clicked.connect(Form.user_2)
-        self.pushButton_9.clicked.connect(Form.user_3)
-        self.pushButton_10.clicked.connect(Form.user_4)
-        self.pushButton_11.clicked.connect(Form.user_5)
+        self.listWidget.itemClicked['QListWidgetItem*'].connect(Form.change)
         self.fontComboBox.currentTextChanged['QString'].connect(Form.setfont)
         self.comboBox.currentIndexChanged['int'].connect(Form.setsize)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
-    #
-    # def mousePressEvent(self, event):
-    #     if event.button() == Qt.LeftButton:
-    #         self.m_flag = True
-    #         self.m_Position = event.globalPos() - self.pos()  # 获取鼠标相对窗口的位置
-    #         # if self.m_Position == (20-450, 470-500):
-    #         #     self.m_flag = False
-    #         event.accept()
-    #         self.setCursor(QCursor(Qt.OpenHandCursor))  # 更改鼠标图标
-    #
-    # def mouseMoveEvent(self, QMouseEvent):
-    #     if Qt.LeftButton and self.m_flag:
-    #         self.move(QMouseEvent.globalPos() - self.m_Position)  # 更改窗口位置
-    #         QMouseEvent.accept()
-    #
-    # def mouseReleaseEvent(self, QMouseEvent):
-    #     self.m_flag = False
-    #     self.setCursor(QCursor(Qt.ArrowCursor))
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.m_flag = True
+            self.m_Position = event.globalPos() - self.pos()  # 获取鼠标相对窗口的位置
+            # if self.m_Position == (20-450, 470-500):
+            #     self.m_flag = False
+            event.accept()
+            self.setCursor(QCursor(Qt.OpenHandCursor))  # 更改鼠标图标
+
+    def mouseMoveEvent(self, QMouseEvent):
+        if Qt.LeftButton and self.m_flag:
+            self.move(QMouseEvent.globalPos() - self.m_Position)  # 更改窗口位置
+            QMouseEvent.accept()
+
+    def mouseReleaseEvent(self, QMouseEvent):
+        self.m_flag = False
+        self.setCursor(QCursor(Qt.ArrowCursor))
     #1123
     # def mousePressEvent(self, event):
     #     self.pressX = event.x()    #记录鼠标按下的时候的坐标
