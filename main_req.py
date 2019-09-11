@@ -1,5 +1,8 @@
 from PyQt5 import QtWidgets, QtCore, QtGui, Qt
 from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
 from login import Ui_Form
 from take5_win import Ui_Form1
 from add import Ui_Form2
@@ -7,9 +10,11 @@ from forget import Ui_Form3
 from update import Ui_Form4
 from record import Ui_Form5
 from recv_win import Ui_Form6
-import client
-import re, time
-import socket, json
+from down_files import Ui_Form7
+from up_all_file import Ui_Form8
+import client, os.path
+import re, time, threading
+import socket, json, hashlib
 
 
 
@@ -17,7 +22,14 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
     '''定义一个聊天窗口类，显示聊天框'''
     info2 = ''
     info3 = ''
+    info4 = ''
+    info5 = ''
+    info6 = ''
     dyname_win = []
+    F = 0
+    PEOPLE = 0
+    people = []
+
 
     def __init__(self):
         super(MyQtWidgets, self).__init__()
@@ -29,6 +41,10 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
         self.mythread2.signal.connect(self.callback2)
         self.mythread.start()
         self.mythread2.start()
+        self.info6 = Mysendfile()
+
+
+
 
 
 
@@ -37,18 +53,34 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
             if 'active_people' in tmp:             #返回显示在线人数
                 tmp = json.loads(tmp)
                 list = tmp['active_people']     #在线人数列表
-                self.listWidget.clear()
-                self.listWidget.addItems(list)
                 peoples = '在线人数:' + str(len(list)) + '人'
                 self.textBrowser_4.setText(peoples)
-                for i, j in enumerate(list):      #为每个用户按钮附上用户名
-                    j = Myrecvtalk()
-                    MyQtWidgets.dyname_win.append([j, list[i], 0])      #每个用户的对象名，用户名，窗口状态0/1（0表示窗口关闭，1表示开启）
+                for k, p in enumerate(list):
+                    if p not in MyQtWidgets.people:
+                        self.listWidget.addItem(p)
+                        MyQtWidgets.people.append(p)
+                        p = Myrecvtalk()
+                        MyQtWidgets.dyname_win.append([p, list[k], 0])
 
+                # if self.PEOPLE == 0:
+                #     for i, j in enumerate(list):      #为每个用户按钮附上用户名
+                #         MyQtWidgets.people.append(j)
+                #         j = Myrecvtalk()
+                #         MyQtWidgets.dyname_win.append([j, list[i], 0])      #每个用户的对象名，用户名，窗口状态0/1（0表示窗口关闭，1表示开启）
+                #         self.PEOPLE = 1
+                # print(MyQtWidgets.dyname_win,1)
             elif 'down_line' in tmp:
                 dict_name = json.loads(tmp)
                 nick_name = dict_name['down_line']
                 down_action = nick_name + '下线!'
+
+                MyQtWidgets.people.remove(nick_name)
+                down_user = filter(lambda x: nick_name == x[1], MyQtWidgets.dyname_win)
+                for i in down_user:
+                    down_p = i
+                self.listWidget.takeItem(MyQtWidgets.dyname_win.index(down_p))
+                MyQtWidgets.dyname_win.remove(down_p)
+
                 self.textBrowser.append(down_action)
 
 
@@ -56,7 +88,19 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
                 dict_name = json.loads(tmp)
                 nick_name = dict_name['up_line']
                 up_action = nick_name + '已上线!'
+
+                # user_name = nick_name
+                # nick_name = Myrecvtalk()
+                # ld = filter(lambda x: user_name == x[1], MyQtWidgets.dyname_win)
+                # for i in ld:
+                #     kd = i
+                # print(kd,'kd')
+                # if not len(kd):
+                #     MyQtWidgets.dyname_win.append([nick_name, user_name, 0])
+                #     print(MyQtWidgets.dyname_win)
+                #     self.listWidget.addItem(user_name)
                 self.textBrowser.append(up_action)
+
                 self.statusBar.showMessage(up_action, 5000)
 
             elif 'person_talk' in tmp:
@@ -162,10 +206,15 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
 
 
     def recv_file(self):
-        pass
+        self.info5 = Mydownfiles()
+        self.info5.show()
 
     def send_file(self):
-        pass
+        req = 'files_connect'
+        if self.F == 0:
+            self.mythread.action(req)
+            self.F = 1
+        self.info6.show()
 
     def change(self,item):    #按钮事件1（用户）
         try:
@@ -498,3 +547,217 @@ class Myrecord(QtWidgets.QMainWindow, Ui_Form5):
 
     def min(self):
         self.showMinimized()
+
+class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
+    '''
+    上传文件
+    '''
+    sock = socket.socket()
+    Oline = 0
+    def __init__(self):
+        super(Mysendfile, self).__init__()
+        self.setupUi(self)
+
+        self.sock.connect(('127.0.0.1', 9995))
+        print('端口3已连接')
+
+        print('端口3连接到服务器')
+        self.mythread3 = Mythread_3()
+        self.mythread3.signal.connect(self.callback3)
+        self.mythread3.start()
+
+
+    def callback3(self, tmp):
+        try:
+            tmp = json.loads(tmp)
+            print(tmp, type(tmp))
+            if tmp['files_req'] == 0:
+                file_name = tmp['files_name']
+                self.textBrowser_2.append(file_name + ' 的md5校验成功，上传完成!')
+                self.textBrowser.clear()
+            else:
+                Mysendfile.textBrowser_2.append(tmp['file_name'] + '上传失败！,传输终止,请重新上传!')
+            print('端口3已断开！')
+        except Exception as e:
+            print(e)
+
+
+
+
+    def min(self):
+        self.showMinimized()
+
+    def exit(self):
+        try:
+            # if self.Oline == 0:
+            self.hide()
+            # Mysendfile.sock.close()
+            # else:
+            #     self.close()
+            #     ex = 'the_out_of'
+            #     self.closed(ex)
+            #     self.Oline = 0
+        except Exception as f:
+            print(f)
+
+    def select_files(self):
+        '''选择文件'''
+        try:
+            self.progressBar.setValue(0)
+            self.textBrowser_2.clear()
+            # self.Oline = 1  #代表文件端口已连接
+            dif = QFileDialog()
+            dif.setFileMode(QFileDialog.AnyFile)    #设置打开任意文件
+            dif.setFilter(QDir.Files)  #文件过滤
+            if dif.exec_():
+                # 接受选中文件的路径，默认为列表
+                file_path = dif.selectedFiles()   #获得文件绝对路径
+                # file_name = os.path.basename(file_path[0])        #获得文件名
+            self.textBrowser.setText(file_path[0])
+            self.textBrowser_2.append('文件名:'+file_path[0])
+            file_size = os.path.getsize(file_path[0])  # 获取文件大小
+            new_file_size = round(file_size / 1024 / 1024, 2)
+            new_file_size = '文件大小:' + str(new_file_size) + 'MB'
+            self.textBrowser_2.append(new_file_size)
+            file_md5 = self.file_md5(file_path[0])
+            self.textBrowser_2.append('文件md5为:' + file_md5)
+
+        except Exception as f:
+            print(f)
+
+    def select_dirs(self):
+        '''选择文件夹'''
+        try:
+            self.progressBar.setValue(0)
+            self.textBrowser_2.clear()
+            dif = QFileDialog()
+            dif.setFileMode(QFileDialog.Directory)    #设置打开任意文件夹
+            dif.setFilter(QDir.Files)  #文件过滤
+            if dif.exec_():
+                # 接受选中文件的路径，默认为列表
+                dir_path = dif.selectedFiles()   #获得文件夹绝对路径
+                # file_name = os.path.basename(file_path[0])        #获得文件名
+            self.textBrowser.setText(dir_path[0])
+            self.textBrowser_2.setText('文件夹名:'+dir_path[0])
+        except Exception as f:
+            print(f)
+
+    def begin(self):
+        try:
+            box = QtWidgets.QMessageBox()
+            file_path = self.textBrowser.toPlainText()    #获取文件绝对地址
+            if file_path == '':
+                box.warning(self, '提示', '请选择文件或者文件夹!')
+            if os.path.isdir(file_path):
+                self.textBrowser_2.append('您正在上传文件夹，请耐心等待....')
+                dir_info = dict()
+                dir_info['dirs_name'] = os.path.basename(file_path)
+                dir_info['dirs_size'] = -1
+                reg = dict()
+                reg['up_dirs'] = 'everyone'
+                reg['dirs_information'] = dir_info
+                reg = json.dumps(reg, ensure_ascii=False)
+                reg = reg.encode()
+                threading.Thread(target=self.up_dirs, args=(reg, file_path))
+
+            else:
+                file_size = os.path.getsize(file_path)       #获取文件大小
+                if file_size > 102400:
+                    self.textBrowser_2.append('文件过大，请耐心等待!')
+                self.textBrowser_2.append('文件开始上传.....' + '\n' + '请不要关闭窗口!')
+
+                threading.Thread(target=self.up_file_thread, args=(self.progressBar, file_path)).start() #发送一个文件
+
+
+            # self.sock.close()
+        except Exception as f:
+            print(f)
+
+    def file_md5(self, file_path):
+        m = hashlib.md5()
+        with open(file_path, 'rb') as f:
+            while True:
+                data = f.read(1024)
+                if not data:
+                    break
+                m.update(data)
+        return m.hexdigest().upper()
+
+
+    def up_file_thread(self, progressBar, file_path):
+        try:
+            file_info = dict()  # 文件信息字典
+            file_info['files_name'] = os.path.basename(file_path)
+            file_info['files_size'] = os.path.getsize(file_path)
+            file_info['files_md5'] = self.file_md5(file_path)
+            visit = file_info['files_size'] / 100
+            reg = dict()  # 请求字典
+            reg['up_files'] = 'everyone'
+            reg['files_information'] = file_info
+            reg = json.dumps(reg, ensure_ascii=False)
+            reg = reg.encode()
+
+            reg_len = '{:<15}'.format(len(reg))
+            self.sock.send(reg_len.encode())
+            self.sock.send(reg)
+            sum = 0
+            progressBar.setValue(sum)
+            with open(file_path, 'rb')as s:
+                while True:
+                    data = s.read(1024)
+                    sum += len(data)
+                    if not data:
+                        break
+                    progressBar.setValue(sum / visit)
+                    self.sock.send(data)
+        except Exception as d:
+            print(d)
+
+    def up_dirs(self):
+        pass
+
+
+
+
+class Mydownfiles(QtWidgets.QMainWindow, Ui_Form7):
+    '''下载文件'''
+
+    def __init__(self):
+        super(Mydownfiles, self).__init__()
+        self.setupUi(self)
+
+    def min(self):
+        self.showMinimized()
+
+    def exit(self):
+        self.close()
+
+    def down_files(self):
+        pass
+
+
+
+class Mythread_3(QThread):    #发送文件
+    signal = pyqtSignal(str)  # 设置触发信号传递的参数数据类型,这里是字符串
+
+    def __init__(self):
+        super(Mythread_3, self).__init__()
+
+    def run(self):
+        while True:    #不停的接消息
+            while True:
+                fan_len = Mysendfile.sock.recv(15).decode()
+                if not len(fan_len):
+                    break
+                fan_len = int(fan_len.strip())
+                size = 0
+                tmp = b''
+                while size < fan_len:
+                    data = Mysendfile.sock.recv(fan_len - size)
+                    if not data:
+                        break
+                    tmp += data
+                    size += len(data)
+                    tmp = tmp.decode()
+                    self.signal.emit(str(tmp))    #把接到的消息返回
+

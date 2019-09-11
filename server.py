@@ -3,9 +3,10 @@ import json
 import threading
 import smtp_mail
 import server_mysql
+import file_change
 
 
-sock = socket.socket()
+sock = socket.socket()   #用于响应登录注册等功能
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sock.bind(("127.0.0.1", 9997))
 sock.listen(5)
@@ -14,6 +15,11 @@ sock_2 = socket.socket()     #创建一个套接字，用于实时显示聊天�
 sock_2.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sock_2.bind(("127.0.0.1", 9996))
 sock_2.listen(5)
+
+sock_3 = socket.socket()  # 创建一个套接字，传文件
+sock_3.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+sock_3.bind(("127.0.0.1", 9995))
+sock_3.listen(5)
 address = []
 
 
@@ -47,7 +53,7 @@ def login_register(conn):
                     conn.send(reg_len.encode())
                     conn.send(reg)
                     codd, addr = sock_2.accept()    #连接第二个端口，收发消息
-                    print(addr, "已连接")
+                    print(addr, "端口2已连接")
                     user_name = r['user_name']
                     nick_name = server_mysql.select_nick_name(user_name)  # 查询数据库返回昵称
                     print(nick_name, type(nick_name))
@@ -85,9 +91,8 @@ def login_register(conn):
         print(e)
 
     finally:
-
         conn.close()
-        print('连接关闭')
+        print('端口1连接关闭')
 
 
 def login(reponse):
@@ -206,7 +211,6 @@ def perosn(conn, nick_name):
     try:
         while True:
             action_len = conn.recv(15).decode()  # 消息长度
-            print(action_len)
             if not action_len:
                 break
             action_data_len = int(action_len.strip())
@@ -221,6 +225,10 @@ def perosn(conn, nick_name):
                 news = action['oneToone_talk']
                 if other_name != nick_name:
                     threading.Thread(target=person_talk, args=(other_name, nick_name, news)).start()  # 接收邀请聊天消息并转发
+
+            elif 'files_connect' in action:
+                conn_3, addr_3 = sock_3.accept()
+                threading.Thread(target=file_change.recv_files, args=(conn_3, )).start()   #开启线程传文件
 
             else:
                 new_action = nick_name + ':' + action
@@ -257,7 +265,7 @@ def perosn(conn, nick_name):
 
         conn.close()
         # print(address)
-        print('连接关闭')
+        print('端口2连接关闭')
 
 
 def active_people():
@@ -270,7 +278,6 @@ def active_people():
         line.append(user_name)
     line_people['active_people'] = line
     line_people = json.dumps(line_people, ensure_ascii=False)
-    print(line_people)
     line_people = line_people.encode()
     user_name_len = '{:<15}'.format(len(line_people))
     for list in address:
@@ -338,7 +345,7 @@ def welcome_user(conn, nick_name):
 def main():
     while True:
         conn, addr= sock.accept()
-        print(addr,"已连接")
+        print(addr,"端口1已连接")
         threading.Thread(target=login_register, args=(conn,)).start()
 
 

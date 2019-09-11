@@ -27,7 +27,7 @@ class Ui_Form6(object):
         self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame.setObjectName("frame")
         self.textBrowser = QtWidgets.QTextBrowser(self.frame)
-        self.textBrowser.setGeometry(QtCore.QRect(20, 30, 360, 231))
+        self.textBrowser.setGeometry(QtCore.QRect(22, 30, 360, 231))
         font = QtGui.QFont()
         font.setFamily("幼圆")
         font.setPointSize(11)
