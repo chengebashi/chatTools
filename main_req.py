@@ -561,7 +561,6 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
         self.sock.connect(('127.0.0.1', 9995))
         print('端口3已连接')
 
-        print('端口3连接到服务器')
         self.mythread3 = Mythread_3()
         self.mythread3.signal.connect(self.callback3)
         self.mythread3.start()
@@ -570,14 +569,13 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
     def callback3(self, tmp):
         try:
             tmp = json.loads(tmp)
-            print(tmp, type(tmp))
+            # print(tmp, type(tmp))
             if tmp['files_req'] == 0:
                 file_name = tmp['files_name']
-                self.textBrowser_2.append(file_name + ' 的md5校验成功，上传完成!')
-                self.textBrowser.clear()
+                self.textBrowser_2.append('-' + file_name + ' 的md5校验成功，上传完成!')
+                # self.textBrowser.clear()
             else:
                 Mysendfile.textBrowser_2.append(tmp['file_name'] + '上传失败！,传输终止,请重新上传!')
-            print('端口3已断开！')
         except Exception as e:
             print(e)
 
@@ -650,23 +648,13 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
                 box.warning(self, '提示', '请选择文件或者文件夹!')
             if os.path.isdir(file_path):
                 self.textBrowser_2.append('您正在上传文件夹，请耐心等待....')
-                dir_info = dict()
-                dir_info['dirs_name'] = os.path.basename(file_path)
-                dir_info['dirs_size'] = -1
-                reg = dict()
-                reg['up_dirs'] = 'everyone'
-                reg['dirs_information'] = dir_info
-                reg = json.dumps(reg, ensure_ascii=False)
-                reg = reg.encode()
-                threading.Thread(target=self.up_dirs, args=(reg, file_path))
-
+                threading.Thread(target=self.up_dirs, args=(file_path, )).start()   #发送文件夹
             else:
                 file_size = os.path.getsize(file_path)       #获取文件大小
                 if file_size > 102400:
                     self.textBrowser_2.append('文件过大，请耐心等待!')
                 self.textBrowser_2.append('文件开始上传.....' + '\n' + '请不要关闭窗口!')
-
-                threading.Thread(target=self.up_file_thread, args=(self.progressBar, file_path)).start() #发送一个文件
+                threading.Thread(target=self.up_file_thread, args=(file_path, )).start() #发送一个文件
 
 
             # self.sock.close()
@@ -684,14 +672,14 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
         return m.hexdigest().upper()
 
 
-    def up_file_thread(self, progressBar, file_path):
+    def up_file_thread(self, file_path):     #传输一个文件
         try:
             file_info = dict()  # 文件信息字典
             file_info['files_name'] = os.path.basename(file_path)
             file_info['files_size'] = os.path.getsize(file_path)
             file_info['files_md5'] = self.file_md5(file_path)
             visit = file_info['files_size'] / 100
-            reg = dict()  # 请求字典
+            reg = dict()
             reg['up_files'] = 'everyone'
             reg['files_information'] = file_info
             reg = json.dumps(reg, ensure_ascii=False)
@@ -701,21 +689,86 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
             self.sock.send(reg_len.encode())
             self.sock.send(reg)
             sum = 0
-            progressBar.setValue(sum)
+            self.progressBar.setValue(sum)
             with open(file_path, 'rb')as s:
                 while True:
                     data = s.read(1024)
                     sum += len(data)
                     if not data:
                         break
-                    progressBar.setValue(sum / visit)
+                    self.progressBar.setValue(sum / visit)
                     self.sock.send(data)
         except Exception as d:
             print(d)
 
-    def up_dirs(self):
-        pass
+    def up_dirs(self, dir_path):
+        box = QtWidgets.QMessageBox()
+        try:
+            self.textBrowser.append('文件夹传输不提供进度显示,传输完成会提示!')
+            for root, dirs, files in os.walk(dir_path):
+                if len(dirs) == 0 and len(files) == 0:
+                    empty = root[len(dir_path):]
+                    empty_dir = os.path.basename(dir_path) + empty
+                    self.up_empty_dir(empty_dir)
+                    continue
 
+                for f in files:
+                    file_abs_path = os.path.join(root, f)
+                    print(file_abs_path, 999)
+                    self.up_file_load(file_abs_path, dir_path)
+            box.information(self, '恭喜', '文件夹传输完成!')
+        except Exception as f:
+            print(f)
+
+    def up_empty_dir(self, root):           #空文件夹
+        try:
+            file_info = dict()
+            file_info['files_name'] = root
+            file_info['files_size'] = -1
+            reg = dict()
+            reg['up_files'] = 'everyone'
+            reg['files_information'] = file_info
+            reg = json.dumps(reg, ensure_ascii=False)
+            reg = reg.encode()
+
+            reg_len = '{:<15}'.format(len(reg))
+            self.sock.send(reg_len.encode())
+            self.sock.send(reg)
+        except Exception as f:
+            print(f)
+
+
+    def up_file_load(self, file_path, dir_path):     #传输一个文件
+        try:
+            new_file_path = file_path[len(dir_path):]
+            file_info = dict()  # 文件信息字典
+            file_name = os.path.basename(dir_path) + new_file_path
+            print(file_name, '文件夹中的文件名字')
+            file_info['files_name'] = file_name
+            file_info['files_size'] = os.path.getsize(file_path)
+            file_info['files_md5'] = self.file_md5(file_path)
+            # visit = file_info['files_size'] / 100
+            reg = dict()
+            reg['up_files'] = 'everyone'
+            reg['files_information'] = file_info
+            reg = json.dumps(reg, ensure_ascii=False)
+            reg = reg.encode()
+
+            reg_len = '{:<15}'.format(len(reg))
+            self.sock.send(reg_len.encode())
+            self.sock.send(reg)
+            sum = 0
+            # self.progressBar.setValue(sum)
+            with open(file_path, 'rb')as s:
+                while True:
+                    data = s.read(1024)
+                    sum += len(data)
+                    if not data:
+                        break
+                    # self.progressBar.setValue(sum / visit)
+                    self.sock.send(data)
+        except Exception as d:
+            print(d)
 
 
 

@@ -46,7 +46,7 @@ class Ui_Form8(object):
 "background-image: url(:/newPrefix/back3.png);")
         self.pushButton.setObjectName("pushButton")
         self.textBrowser = QtWidgets.QTextBrowser(self.frame)
-        self.textBrowser.setGeometry(QtCore.QRect(145, 90, 321, 54))
+        self.textBrowser.setGeometry(QtCore.QRect(122, 82, 351, 70))
         font = QtGui.QFont()
         font.setFamily("幼圆")
         font.setPointSize(12)
@@ -89,7 +89,7 @@ class Ui_Form8(object):
         self.progressBar.setAutoFillBackground(True)
 
         self.textBrowser_2 = QtWidgets.QTextBrowser(self.frame)
-        self.textBrowser_2.setGeometry(QtCore.QRect(142, 310, 325, 120))
+        self.textBrowser_2.setGeometry(QtCore.QRect(122, 280, 365, 160))
         font = QtGui.QFont()
         font.setFamily("幼圆")
         font.setPointSize(12)
