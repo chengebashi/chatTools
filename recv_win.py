@@ -65,6 +65,17 @@ class Ui_Form6(object):
         self.pushButton_2.setFont(font)
         self.pushButton_2.setStyleSheet("background-image: url(:/newPrefix/button.png);border-radius:10px;")
         self.pushButton_2.setObjectName("pushButton_2")
+
+        self.pushButton_3 = QtWidgets.QPushButton(self.frame)
+        self.pushButton_3.setGeometry(QtCore.QRect(40, 360, 110, 25))
+        font = QtGui.QFont()
+        font.setFamily("幼圆")
+        font.setPointSize(12)
+        self.pushButton_3.setFont(font)
+        self.pushButton_3.setStyleSheet("background-image: url(:/newPrefix/button.png);border-radius:10px;")
+        self.pushButton_3.setObjectName("pushButton_2")
+
+
         self.label = QtWidgets.QLabel(self.frame)
         self.label.setGeometry(QtCore.QRect(160, 0, 91, 35))
         font = QtGui.QFont()
@@ -91,6 +102,7 @@ class Ui_Form6(object):
         self.pushButton.clicked.connect(Form.closed)
         self.pushButton_5.clicked.connect(Form.min)
         self.pushButton_2.clicked.connect(Form.send_action)
+        self.pushButton_3.clicked.connect(Form.send_file)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def mousePressEvent(self, event):
@@ -126,5 +138,6 @@ class Ui_Form6(object):
 "</style></head><body style=\" font-family:\'幼圆\'; font-size:11pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><br /></p></body></html>"))
         self.pushButton_2.setText(_translate("Form", "发送消息"))
+        self.pushButton_3.setText(_translate("Form", "发送文件"))
         self.pushButton_5.setText(_translate("Form", "-"))
         self.pushButton.setText(_translate("Form", "x"))

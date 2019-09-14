@@ -3,7 +3,8 @@ import json
 import threading
 import smtp_mail
 import server_mysql
-import file_change
+import os.path
+import hashlib
 
 
 sock = socket.socket()   #用于响应登录注册等功能
@@ -21,6 +22,10 @@ sock_3.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 sock_3.bind(("127.0.0.1", 9995))
 sock_3.listen(5)
 address = []
+File_list = []
+PATH = r'D:\笔记\临时文件传输'
+PATH_2 = r'D:\笔记\临时接收'
+A = 0
 
 
 
@@ -60,8 +65,9 @@ def login_register(conn):
                     threading.Thread(target=perosn, args=(codd, nick_name)).start()   #开启线程接消息
 
                     conn_3, addr_3 = sock_3.accept()
+                    File_list.append([conn_3,nick_name])
                     print(addr_3, '端口3已连接')
-                    threading.Thread(target=file_change.recv_files, args=(conn_3,)).start()
+                    threading.Thread(target=recv_files, args=(conn_3, nick_name)).start()
 
 
             elif reponse["login"] == 2:
@@ -343,6 +349,375 @@ def welcome_user(conn, nick_name):
         conn.send(line_people)
     except:
         pass
+
+
+
+
+
+def recv_files(conn, nick_name):
+    global A
+    try:
+        while True:
+            file_len = conn.recv(15).decode()      # 消息长度
+            if not file_len:
+                break
+            data_len = int(file_len.strip())
+            file_data = recved_main(data_len, conn)
+            if 'down_file_list' in file_data:
+                send_file_list(conn)         #发送文件列表
+
+            elif 'down_files' in file_data:          #下载文件或者文件夹请求
+                files_info = json.loads(file_data)
+                print('有问题吗')
+                if files_info['down_files'] == 'everyone':
+                    if files_info['files_type'] == 'files':         #文件类型
+                        down_one_file(files_info, conn)
+                    else:
+                        print(1)
+                        dirs_path = os.path.join(PATH, files_info['files_name'])
+                        print(dirs_path,'哈哈哈哈')
+                        for root, dirs, files in os.walk(dirs_path):
+                            if len(dirs) == 0 and len(files) == 0:
+                                empty = root[len(dirs_path)+1:]
+                                empty_dir = empty
+                                print('空文件夹', empty_dir)
+                                down_empty_dir(empty_dir, conn)
+                                continue
+
+                            for f in files:
+                                file_abs_path = os.path.join(root, f)
+                                print(file_abs_path, 999)
+                                the_fi = file_abs_path[len(PATH) + 1:]
+                                files_info['files_name'] = the_fi
+                                down_one_file(files_info, conn)
+
+                        finish = 'finish'
+                        finish = finish.encode()
+                        finish_len = '{:<15}'.format(len(finish))
+                        conn.send(finish_len.encode())
+                        conn.send(finish)
+                else:
+                    file_list = []
+                    recv_name = files_info['down_files']
+                    list = os.listdir(PATH_2)
+                    print(list, '存放目录')
+                    for i in list:
+                        j = i.split(',')
+                        file_list.append(j)
+                    ld = filter(lambda x: recv_name == x[1], file_list)
+                    for k in ld:
+                        jk = k
+                    current = jk[0] +','+ jk[1]
+                    path = os.path.join(PATH_2, current)
+                    print(path, 'path')
+                    list_2 = filter(lambda x: recv_name == x[1], File_list)
+                    for i in list_2:
+                        the_sock_2 = i
+                    print(path, '这个人的文件地址')
+                    the_file_info = os.listdir(path)
+                    for i in the_file_info:
+                        j = os.path.join(path, i)
+                        if os.path.isfile(j):
+                            print(j, '文件的最终地址')
+                            down_one_file_person(path, j, the_sock_2[0], recv_name)
+                            the_complete = 'file_complete'
+                            the_complete = the_complete.encode()
+                            the_complete_len = '{:<15}'.format(len(the_complete))
+                            the_sock_2[0].send(the_complete_len.encode())
+                            the_sock_2[0].send(the_complete)
+                            os.remove(j)   #删除该文件
+                        else:
+                            for root, dirs, files in os.walk(j):
+                                if len(dirs) == 0 and len(files) == 0:
+                                    empty = root[len(j) + 1:]
+                                    empty_dir = empty
+                                    print('空文件夹', empty_dir)
+                                    down_empty_dir_person(path, empty_dir, the_sock_2[0], recv_name)
+                                    continue
+
+                                for f in files:
+                                    file_abs_path = os.path.join(root, f)
+                                    print(file_abs_path, 999)
+                                    down_one_file_person(path, file_abs_path, the_sock_2[0], recv_name)
+                            the_complete = 'file_complete'
+                            the_complete = the_complete.encode()
+                            the_complete_len = '{:<15}'.format(len(the_complete))
+                            the_sock_2[0].send(the_complete_len.encode())
+                            the_sock_2[0].send(the_complete)
+                            os.removedirs(j)       #删除目录
+            else:
+                file_data = json.loads(file_data)
+                if file_data['up_files'] == 'everyone':
+                    file_info = file_data['files_information']
+                    file_name = file_info['files_name']
+                    file_size = file_info['files_size']
+                    file_size = int(file_size)
+                    if file_size == -1:  # 如果为空文件夹
+                        os.makedirs(os.path.join(PATH, file_name), exist_ok=True)
+                        continue
+                    else:
+                        file_md5 = file_info['files_md5']
+                        dir_file = os.path.dirname(file_name)
+                        if len(dir_file) == 0:
+                            print(file_name, '单个文件名')
+                            local_file_name = os.path.join(PATH, file_name)
+                            recv_size = 0
+                            with open(local_file_name, 'wb')as f:
+                                while recv_size < file_size:
+                                    file_tmp = conn.recv(file_size - recv_size)
+                                    if not file_tmp:
+                                        break
+                                    f.write(file_tmp)
+                                    recv_size += len(file_tmp)
+
+                            the_md5 = check_md5(local_file_name)
+                            if the_md5 == file_md5:
+                                action = dict()
+                                action['files_req'] = 0
+                                action['files_name'] = file_name
+                                action = json.dumps(action, ensure_ascii=False)
+                                action = action.encode()
+                                action_len = '{:<15}'.format(len(action))
+                                conn.send(action_len.encode())
+                                conn.send(action)
+                            else:
+                                A = 1
+                                action = dict()
+                                action['files_req'] = 1
+                                action['files_name'] = file_name
+                                action = json.dumps(action, ensure_ascii=False)
+                                action = action.encode()
+                                action_len = '{:<15}'.format(len(action))
+                                conn.send(action_len.encode())
+                                conn.send(action)
+                                break
+
+                        else:
+                            print(dir_file, '文件的上级文件夹名')
+                            os.makedirs(os.path.join(PATH, dir_file), exist_ok=True)
+                            local_file_name = os.path.join(PATH, file_name)
+
+                            recv_size = 0
+                            with open(local_file_name, 'wb')as f:
+                                while recv_size < file_size:
+                                    file_tmp = conn.recv(file_size - recv_size)
+                                    if not file_tmp:
+                                        break
+                                    f.write(file_tmp)
+                                    recv_size += len(file_tmp)
+                            the_md5 = check_md5(local_file_name)
+                            if the_md5 == file_md5:
+                                action = dict()
+                                action['files_req'] = 0
+                                action['files_name'] = file_name
+                                action = json.dumps(action, ensure_ascii=False)
+                                action = action.encode()
+                                action_len = '{:<15}'.format(len(action))
+                                conn.send(action_len.encode())
+                                conn.send(action)
+                            else:
+                                A = 1
+                                action = dict()
+                                action['files_req'] = 1
+                                action['files_name'] = file_name
+                                action = json.dumps(action, ensure_ascii=False)
+                                action = action.encode()
+                                action_len = '{:<15}'.format(len(action))
+                                conn.send(action_len.encode())
+                                conn.send(action)
+                                break
+
+                else:                  #单人文件上传
+                    new_dir = os.path.join(PATH_2, file_data['up_files'])
+                    os.makedirs(new_dir, exist_ok=True)
+                    file_info = file_data['files_information']
+                    file_name = file_info['files_name']
+                    file_size = file_info['files_size']
+                    file_size = int(file_size)
+                    if file_size == -1:  # 如果为空文件夹
+                        os.makedirs(os.path.join(new_dir, file_name), exist_ok=True)
+                        continue
+                    else:
+                        file_md5 = file_info['files_md5']
+                        dir_file = os.path.dirname(file_name)
+                        if len(dir_file) == 0:
+                            print(file_name, '单个文件名')
+                            local_file_name = os.path.join(new_dir, file_name)
+                            recv_size = 0
+                            with open(local_file_name, 'wb')as f:
+                                while recv_size < file_size:
+                                    file_tmp = conn.recv(file_size - recv_size)
+                                    if not file_tmp:
+                                        break
+                                    f.write(file_tmp)
+                                    recv_size += len(file_tmp)
+
+                            the_md5 = check_md5(local_file_name)
+                            if the_md5 == file_md5:
+                                action = dict()
+                                action['send_to_recv'] = file_data['up_files'].split(',')[0]
+                                action['files_name'] = file_name
+                                action = json.dumps(action, ensure_ascii=False)
+                                action = action.encode()
+                                action_len = '{:<15}'.format(len(action))
+                                send_name = file_data['up_files'].split(',')[1]
+                                list = filter(lambda x: send_name == x[1], File_list)
+                                for i in list:
+                                    the_sock = i
+                                the_sock[0].send(action_len.encode())
+                                the_sock[0].send(action)
+                            else:
+                                A = 1
+                                action = dict()
+                                action['files_req_person'] = 1
+                                action['files_name'] = file_name
+                                action = json.dumps(action, ensure_ascii=False)
+                                action = action.encode()
+                                action_len = '{:<15}'.format(len(action))
+                                conn.send(action_len.encode())
+                                conn.send(action)
+                                break
+
+                        else:
+                            print(dir_file, '文件的上级文件夹名')
+                            os.makedirs(os.path.join(new_dir, dir_file), exist_ok=True)
+                            local_file_name = os.path.join(new_dir, file_name)
+
+                            recv_size = 0
+                            with open(local_file_name, 'wb')as f:
+                                while recv_size < file_size:
+                                    file_tmp = conn.recv(file_size - recv_size)
+                                    if not file_tmp:
+                                        break
+                                    f.write(file_tmp)
+                                    recv_size += len(file_tmp)
+                            the_md5 = check_md5(local_file_name)
+                            if the_md5 == file_md5:
+                                action = dict()
+                                action['files_req_person'] = 1
+                                action['files_name'] = file_name
+                                action = json.dumps(action, ensure_ascii=False)
+                                action = action.encode()
+                                action_len = '{:<15}'.format(len(action))
+                                conn.send(action_len.encode())
+                                conn.send(action)
+                            else:
+                                A = 1
+                                action = dict()
+                                action['files_req_person'] = 1
+                                action['files_name'] = file_name
+                                action = json.dumps(action, ensure_ascii=False)
+                                action = action.encode()
+                                action_len = '{:<15}'.format(len(action))
+                                conn.send(action_len.encode())
+                                conn.send(action)
+                                break
+        # print('端口3连接关闭！')
+    except Exception as f:
+        print(f)
+        conn.close()
+
+    finally:
+        File_list.remove([conn, nick_name])
+        # conn.close()
+
+
+def check_md5(file_name):
+    m = hashlib.md5()
+    with open(file_name, 'rb')as e:
+        while True:
+            data = e.read(1024)
+            if not data:
+                break
+            m.update(data)
+    return m.hexdigest().upper()
+
+def send_file_list(conn):
+    LIST = []
+    files_list = os.listdir(PATH)
+    for i in files_list:
+        if os.path.isfile(os.path.join(PATH, i)):
+            LIST.append('File:' + i)
+        else:
+            LIST.append('Dirs:' + i)
+    down_file_list = dict()
+    down_file_list['down_file'] = LIST
+    down_file_list = json.dumps(down_file_list)     #字典转字符串
+    down_file_list = down_file_list.encode()       #编码
+    down_file_list_len = '{:<15}'.format(len(down_file_list))
+    conn.send(down_file_list_len.encode())
+    conn.send(down_file_list)
+
+def down_one_file(files_info, conn):
+    abs_path = os.path.join(PATH, files_info['files_name'])
+    send_file = dict()
+    send_file['TO_send'] = 'everyone'
+    send_file['files_name'] = files_info['files_name']
+    send_file['files_size'] = os.path.getsize(abs_path)
+    send_file['files_md5'] = check_md5(abs_path)
+    send_file = json.dumps(send_file, ensure_ascii=False)
+    send_file = send_file.encode()
+    send_file_len = '{:<15}'.format(len(send_file))
+    conn.send(send_file_len.encode())
+    conn.send(send_file)
+
+    print(os.path.join(PATH, files_info['files_name']))
+    with open(os.path.join(PATH, files_info['files_name']), 'rb') as r:
+        while True:
+            data = r.read(1024)
+            if not data:
+                break
+            conn.send(data)
+
+
+def down_one_file_person(path, i, conn, recv_name):
+    send_file = dict()
+    send_file['TO_send'] = recv_name
+    send_file['files_name'] = i[len(path)+1:]
+    send_file['files_size'] = os.path.getsize(i)
+    print(send_file['files_name'], '文件名')
+    send_file = json.dumps(send_file, ensure_ascii=False)
+    send_file = send_file.encode()
+    send_file_len = '{:<15}'.format(len(send_file))
+    conn.send(send_file_len.encode())
+    conn.send(send_file)
+    with open(i, 'rb') as r:
+        while True:
+            data = r.read(1024)
+            if not data:
+                break
+            conn.send(data)
+
+
+def down_empty_dir(root, conn):
+    try:
+        send_file = dict()
+        send_file['TO_send'] = 'everyone'
+        send_file['files_name'] = root
+        send_file['files_size'] = -1
+        send_file['files_md5'] = '暂无'
+        send_file = json.dumps(send_file, ensure_ascii=False)
+        send_file = send_file.encode()
+        send_file_len = '{:<15}'.format(len(send_file))
+        conn.send(send_file_len.encode())
+        conn.send(send_file)
+    except Exception as f:
+        print(f)
+
+
+def down_empty_dir_person(path, root, conn, recv_name):
+    try:
+        send_file = dict()
+        send_file['TO_send'] = recv_name
+        send_file['files_name'] = root[len(path)+1:]
+        send_file['files_size'] = -1
+        send_file = json.dumps(send_file, ensure_ascii=False)
+        send_file = send_file.encode()
+        send_file_len = '{:<15}'.format(len(send_file))
+        conn.send(send_file_len.encode())
+        conn.send(send_file)
+    except Exception as f:
+        print(f)
 
 
 

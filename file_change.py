@@ -8,8 +8,10 @@ PATH = r'D:\笔记\临时文件传输'
 A = 0
 
 
-def recv_files(conn):
+def recv_files(conn, nickname):
     global A
+    global File_list
+    print(File_list)
     try:
         while True:
             file_len = conn.recv(15).decode()      # 消息长度
@@ -137,6 +139,9 @@ def recv_files(conn):
     except Exception as f:
         print(f)
         conn.close()
+
+    finally:
+        File_list.remove()
 
 
 def check_md5(file_name):

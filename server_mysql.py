@@ -1,7 +1,7 @@
 import pymysql
 
 conf = dict()
-conf = {"db_server_ip": "47.100.253.248",
+conf = {"db_server_ip": "127.0.0.1",
         "db_server_port": 3306,
         "db_user": "chenge",
         "db_password": "chenge",

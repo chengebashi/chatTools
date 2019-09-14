@@ -4,7 +4,7 @@ import re
 
 
 sock = socket.socket()
-sock.connect(("127.0.0.1", 9997))
+sock.connect(("47.100.253.248", 9997))
 
 
 def login(arg):
