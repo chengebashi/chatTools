@@ -59,6 +59,10 @@ def login_register(conn):
                     print(nick_name, type(nick_name))
                     threading.Thread(target=perosn, args=(codd, nick_name)).start()   #开启线程接消息
 
+                    conn_3, addr_3 = sock_3.accept()
+                    print(addr_3, '端口3已连接')
+                    threading.Thread(target=file_change.recv_files, args=(conn_3,)).start()
+
 
             elif reponse["login"] == 2:
                 r = register(reponse)
@@ -226,9 +230,9 @@ def perosn(conn, nick_name):
                 if other_name != nick_name:
                     threading.Thread(target=person_talk, args=(other_name, nick_name, news)).start()  # 接收邀请聊天消息并转发
 
-            elif 'files_connect' in action:
-                conn_3, addr_3 = sock_3.accept()
-                threading.Thread(target=file_change.recv_files, args=(conn_3, )).start()   #开启线程传文件
+            # elif 'files_connect' in action:
+            #     conn_3, addr_3 = sock_3.accept()
+            #     threading.Thread(target=file_change.recv_files, args=(conn_3, )).start()   #开启线程传文件
 
             else:
                 new_action = nick_name + ':' + action

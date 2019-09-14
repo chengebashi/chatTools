@@ -134,6 +134,20 @@ class Ui_Form8(object):
 "background-image: url(:/newPrefix/back3.png);")
         self.pushButton_5.setObjectName("pushButton_5")
 
+        self.statusBar = QtWidgets.QStatusBar()
+        font = QtGui.QFont()
+        font.setFamily("幼圆")
+        font.setPointSize(13)
+        self.statusBar.setFont(font)
+        self.statusBar.setStyleSheet("border:none;\n"
+                                     "background-color:transparent;\n"
+                                     "")
+        self.setStatusBar(self.statusBar)
+
+
+
+
+
     # def mousePressEvent(self, event):
     #     if event.button() == Qt.LeftButton:
     #         self.m_flag = True

@@ -46,8 +46,29 @@ class Ui_Form7(object):
         self.pushButton.setStyleSheet("border-radius:10px;\n"
 "background-image: url(:/newPrefix/back3.png);")
         self.pushButton.setObjectName("pushButton")
+
+        self.pushButton_2 = QtWidgets.QPushButton(self.frame)
+        self.pushButton_2.setGeometry(QtCore.QRect(370, 100, 130, 31))
+        font = QtGui.QFont()
+        font.setFamily("华文新魏")
+        font.setPointSize(12)
+        font.setBold(False)
+        font.setItalic(False)
+        font.setUnderline(False)
+        font.setWeight(50)
+        font.setStrikeOut(False)
+        font.setKerning(True)
+        self.pushButton_2.setFont(font)
+        self.pushButton_2.setStyleSheet("border-radius:10px;\n"
+                                      "background-image: url(:/newPrefix/back3.png);")
+        self.pushButton_2.setObjectName("pushButton")
+
         self.textBrowser = QtWidgets.QTextBrowser(self.frame)
-        self.textBrowser.setGeometry(QtCore.QRect(20, 60, 311, 31))
+        self.textBrowser.setGeometry(QtCore.QRect(20, 60, 311, 51))
+        font = QtGui.QFont()
+        font.setFamily("幼圆")
+        font.setPointSize(12)
+        self.textBrowser.setFont(font)
         self.textBrowser.setStyleSheet("border:none;\n"
 "border-radius:5px")
         self.textBrowser.setObjectName("textBrowser")
@@ -66,7 +87,8 @@ class Ui_Form7(object):
         self.label.setObjectName("label")
         self.progressBar = QtWidgets.QProgressBar(self.frame)
         self.progressBar.setGeometry(QtCore.QRect(370, 390, 231, 23))
-        self.progressBar.setProperty("value", 24)
+        # self.progressBar.setProperty("value", 0)
+        self.progressBar.setRange(0, 100)
         self.progressBar.setStyleSheet("border:2px solid grey;border-radius:5px;text-align:center;\n")
         self.progressBar.setObjectName("progressBar")
         op = QtWidgets.QGraphicsOpacityEffect()
@@ -118,6 +140,16 @@ class Ui_Form7(object):
         self.listWidget.setGraphicsEffect(op)
         self.listWidget.setAutoFillBackground(True)
 
+        self.statusBar = QtWidgets.QStatusBar()
+        font = QtGui.QFont()
+        font.setFamily("幼圆")
+        font.setPointSize(13)
+        self.statusBar.setFont(font)
+        self.statusBar.setStyleSheet("border:none;\n"
+                                     "background-color:transparent;\n"
+                                     "")
+        self.setStatusBar(self.statusBar)
+
     # def mousePressEvent(self, event):
     #     if event.button() == Qt.LeftButton:
     #         self.m_flag = True
@@ -137,25 +169,19 @@ class Ui_Form7(object):
     #     self.setCursor(QCursor(Qt.ArrowCursor))
 
 
-
-
-
-
-
-
-
-
-
         self.retranslateUi(Form)
         self.pushButton.clicked.connect(Form.down_files)
+        self.pushButton_2.clicked.connect(Form.choice)
         self.pushButton_4.clicked.connect(Form.min)
         self.pushButton_3.clicked.connect(Form.exit)
+        self.listWidget.itemClicked['QListWidgetItem*'].connect(Form.change)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Form"))
         self.pushButton.setText(_translate("Form", "下载文件"))
+        self.pushButton_2.setText(_translate("Form", "选择保存地址"))
         self.label.setText(_translate("Form", "       下载群文件"))
         self.textBrowser_2.setHtml(_translate("Form", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
 "<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"

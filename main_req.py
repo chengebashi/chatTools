@@ -16,7 +16,9 @@ import client, os.path
 import re, time, threading
 import socket, json, hashlib
 
+sock_3 = socket.socket()
 
+FILE_PATH = ''
 
 class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
     '''定义一个聊天窗口类，显示聊天框'''
@@ -29,11 +31,13 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
     F = 0
     PEOPLE = 0
     people = []
+    DOWN = []
 
 
     def __init__(self):
         super(MyQtWidgets, self).__init__()
         self.setupUi(self)
+        sock_3.connect(("127.0.0.1", 9995))
 
         self.mythread = MyThread()    #开启一个线程来接收消息
         self.mythread2 = MyThread_2()
@@ -42,10 +46,12 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
         self.mythread.start()
         self.mythread2.start()
         self.info6 = Mysendfile()
+        self.info5 = Mydownfiles()
+        MyQtWidgets.DOWN.append(self.info5)
 
-
-
-
+        self.mythread3 = Mythread_3()
+        self.mythread3.signal.connect(self.callback3)
+        self.mythread3.start()
 
 
     def callback(self, tmp):  # 这里的 i 就是任务线程传回的数据
@@ -82,6 +88,8 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
                 MyQtWidgets.dyname_win.remove(down_p)
 
                 self.textBrowser.append(down_action)
+
+                self.statusBar.showMessage(down_action, 5000)
 
 
             elif 'up_line' in tmp:
@@ -141,9 +149,38 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
         self.textBrowser_5.setText(now_time)
 
 
+    def callback3(self, tmp):
+        try:
+            if 'down_file' in tmp:
+                tmp = json.loads(tmp)
+                files_list = tmp['down_file']
+                self.info5.listWidget.clear()
+                self.info5.listWidget.addItems(files_list)
+            # print(tmp, type(tmp))
+            elif 'finish' in tmp:
+                MyQtWidgets.DOWN[0].textBrowser_2.append('文件夹传输完成!')
+                MyQtWidgets.DOWN[0].statusBar.showMessage('文件传输完成', 5000)
+
+            else:
+                tmp = json.loads(tmp)
+                if tmp['files_req'] == 0:
+                    file_name = tmp['files_name']
+                    self.info6.textBrowser_2.append('-' + file_name + ' 的md5校验成功，上传完成!')
+                    # self.textBrowser.clear()
+                else:
+                    self.info6.textBrowser_2.append(tmp['file_name'] + '上传失败！,传输终止,请重新上传!')
+        except Exception as e:
+            print(e)
+
+
+
     def closed(self):
         client.exit()
         self.close()
+        up_talk = filter(lambda x: 1 == x[2], MyQtWidgets.dyname_win)
+        for i in up_talk:
+            i[0].close()
+
 
 
     def min(self):
@@ -181,7 +218,7 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
         try:
             self.info2 = Myrecord()
             self.info2.show()
-            with open('record.txt', 'r')as f:
+            with open('record.txt', 'r',)as f:
                 all = f.read()
             self.info2.textBrowser.append(all)
         except Exception as d:
@@ -206,14 +243,17 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
 
 
     def recv_file(self):
-        self.info5 = Mydownfiles()
+        down_file = dict()
+        down_file['down_file_list'] = 'files_list'
+        down_file = json.dumps(down_file, ensure_ascii=False)
+        down_file = down_file.encode()
+        down_file_len = '{:<15}'.format(len(down_file))  # 报头长度
+        sock_3.send(down_file_len.encode())  # 发送报头长度
+        sock_3.send(down_file)  # 发送正文
+        # sock_3.send()
         self.info5.show()
 
     def send_file(self):
-        req = 'files_connect'
-        if self.F == 0:
-            self.mythread.action(req)
-            self.F = 1
         self.info6.show()
 
     def change(self,item):    #按钮事件1（用户）
@@ -260,8 +300,8 @@ class MyThread(QThread):
                         break
                     tmp += data
                     size += len(data)
-                    tmp = tmp.decode()
-                    self.signal.emit(str(tmp))    #把接到的消息返回
+                tmp = tmp.decode()
+                self.signal.emit(str(tmp))    #把接到的消息返回
 
     def action(self,act):
         # abc = re.sub("[{A-Za-z0-9\!\%\[\]\,\。}]", "", act)     #匹配中文字符
@@ -552,32 +592,14 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
     '''
     上传文件
     '''
-    sock = socket.socket()
+    # sock = socket.socket()
     Oline = 0
     def __init__(self):
         super(Mysendfile, self).__init__()
         self.setupUi(self)
 
-        self.sock.connect(('127.0.0.1', 9995))
+        # self.sock.connect(('127.0.0.1', 9995))
         print('端口3已连接')
-
-        self.mythread3 = Mythread_3()
-        self.mythread3.signal.connect(self.callback3)
-        self.mythread3.start()
-
-
-    def callback3(self, tmp):
-        try:
-            tmp = json.loads(tmp)
-            # print(tmp, type(tmp))
-            if tmp['files_req'] == 0:
-                file_name = tmp['files_name']
-                self.textBrowser_2.append('-' + file_name + ' 的md5校验成功，上传完成!')
-                # self.textBrowser.clear()
-            else:
-                Mysendfile.textBrowser_2.append(tmp['file_name'] + '上传失败！,传输终止,请重新上传!')
-        except Exception as e:
-            print(e)
 
 
 
@@ -601,24 +623,28 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
     def select_files(self):
         '''选择文件'''
         try:
-            self.progressBar.setValue(0)
-            self.textBrowser_2.clear()
-            # self.Oline = 1  #代表文件端口已连接
-            dif = QFileDialog()
-            dif.setFileMode(QFileDialog.AnyFile)    #设置打开任意文件
-            dif.setFilter(QDir.Files)  #文件过滤
-            if dif.exec_():
-                # 接受选中文件的路径，默认为列表
-                file_path = dif.selectedFiles()   #获得文件绝对路径
-                # file_name = os.path.basename(file_path[0])        #获得文件名
-            self.textBrowser.setText(file_path[0])
-            self.textBrowser_2.append('文件名:'+file_path[0])
-            file_size = os.path.getsize(file_path[0])  # 获取文件大小
-            new_file_size = round(file_size / 1024 / 1024, 2)
-            new_file_size = '文件大小:' + str(new_file_size) + 'MB'
-            self.textBrowser_2.append(new_file_size)
-            file_md5 = self.file_md5(file_path[0])
-            self.textBrowser_2.append('文件md5为:' + file_md5)
+            box = QtWidgets.QMessageBox()
+            if self.Oline == 1:
+                box.warning(self, '警告', '文件上传中，请稍后重试!')
+            else:
+                self.progressBar.setValue(0)
+                self.textBrowser_2.clear()
+                # self.Oline = 1  #代表文件端口已连接
+                dif = QFileDialog()
+                dif.setFileMode(QFileDialog.AnyFile)    #设置打开任意文件
+                dif.setFilter(QDir.Files)  #文件过滤
+                if dif.exec_():
+                    # 接受选中文件的路径，默认为列表
+                    file_path = dif.selectedFiles()   #获得文件绝对路径
+                    # file_name = os.path.basename(file_path[0])        #获得文件名
+                self.textBrowser.setText(file_path[0])
+                self.textBrowser_2.append('文件名:'+file_path[0])
+                file_size = os.path.getsize(file_path[0])  # 获取文件大小
+                new_file_size = round(file_size / 1024 / 1024, 2)
+                new_file_size = '文件大小:' + str(new_file_size) + 'MB'
+                self.textBrowser_2.append(new_file_size)
+                file_md5 = self.file_md5(file_path[0])
+                self.textBrowser_2.append('文件md5为:' + file_md5)
 
         except Exception as f:
             print(f)
@@ -626,35 +652,42 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
     def select_dirs(self):
         '''选择文件夹'''
         try:
-            self.progressBar.setValue(0)
-            self.textBrowser_2.clear()
-            dif = QFileDialog()
-            dif.setFileMode(QFileDialog.Directory)    #设置打开任意文件夹
-            dif.setFilter(QDir.Files)  #文件过滤
-            if dif.exec_():
-                # 接受选中文件的路径，默认为列表
-                dir_path = dif.selectedFiles()   #获得文件夹绝对路径
-                # file_name = os.path.basename(file_path[0])        #获得文件名
-            self.textBrowser.setText(dir_path[0])
-            self.textBrowser_2.setText('文件夹名:'+dir_path[0])
+            box  = QtWidgets.QMessageBox()
+            if self.Oline == 1:
+                box.warning(self, '警告','文件上传中，请稍后重试!')
+            else:
+                self.progressBar.setValue(0)
+                self.textBrowser_2.clear()
+                dif = QFileDialog()
+                dif.setFileMode(QFileDialog.Directory)    #设置打开任意文件夹
+                dif.setFilter(QDir.Files)  #文件过滤
+                if dif.exec_():
+                    # 接受选中文件的路径，默认为列表
+                    dir_path = dif.selectedFiles()   #获得文件夹绝对路径
+                    # file_name = os.path.basename(file_path[0])        #获得文件名
+                self.textBrowser.setText(dir_path[0])
+                self.textBrowser_2.setText('文件夹名:'+dir_path[0])
         except Exception as f:
             print(f)
 
     def begin(self):
         try:
             box = QtWidgets.QMessageBox()
-            file_path = self.textBrowser.toPlainText()    #获取文件绝对地址
-            if file_path == '':
-                box.warning(self, '提示', '请选择文件或者文件夹!')
-            if os.path.isdir(file_path):
-                self.textBrowser_2.append('您正在上传文件夹，请耐心等待....')
-                threading.Thread(target=self.up_dirs, args=(file_path, )).start()   #发送文件夹
+            if self.Oline == 1:
+                box.warning(self, '警告', '文件上传中，请稍后重试!')
             else:
-                file_size = os.path.getsize(file_path)       #获取文件大小
-                if file_size > 102400:
-                    self.textBrowser_2.append('文件过大，请耐心等待!')
-                self.textBrowser_2.append('文件开始上传.....' + '\n' + '请不要关闭窗口!')
-                threading.Thread(target=self.up_file_thread, args=(file_path, )).start() #发送一个文件
+                file_path = self.textBrowser.toPlainText()    #获取文件绝对地址
+                if file_path == '':
+                    box.warning(self, '提示', '请选择文件或者文件夹!')
+                if os.path.isdir(file_path):
+                    self.textBrowser_2.append('您正在上传文件夹，请耐心等待....')
+                    threading.Thread(target=self.up_dirs, args=(file_path, )).start()   #发送文件夹
+                else:
+                    file_size = os.path.getsize(file_path)       #获取文件大小
+                    if file_size > 102400:
+                        self.textBrowser_2.append('文件过大，请耐心等待!')
+                    self.textBrowser_2.append('文件开始上传.....' + '\n' + '请不要关闭窗口!')
+                    threading.Thread(target=self.up_file_thread, args=(file_path, )).start() #发送一个文件
 
 
             # self.sock.close()
@@ -674,6 +707,7 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
 
     def up_file_thread(self, file_path):     #传输一个文件
         try:
+            self.Oline = 1
             file_info = dict()  # 文件信息字典
             file_info['files_name'] = os.path.basename(file_path)
             file_info['files_size'] = os.path.getsize(file_path)
@@ -686,8 +720,8 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
             reg = reg.encode()
 
             reg_len = '{:<15}'.format(len(reg))
-            self.sock.send(reg_len.encode())
-            self.sock.send(reg)
+            sock_3.send(reg_len.encode())
+            sock_3.send(reg)
             sum = 0
             self.progressBar.setValue(sum)
             with open(file_path, 'rb')as s:
@@ -697,18 +731,21 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
                     if not data:
                         break
                     self.progressBar.setValue(sum / visit)
-                    self.sock.send(data)
+                    sock_3.send(data)
+            self.Oline = 0
         except Exception as d:
             print(d)
 
     def up_dirs(self, dir_path):
-        box = QtWidgets.QMessageBox()
+        # box = QtWidgets.QMessageBox()
         try:
+            self.Oline = 1
             self.textBrowser.append('文件夹传输不提供进度显示,传输完成会提示!')
             for root, dirs, files in os.walk(dir_path):
                 if len(dirs) == 0 and len(files) == 0:
                     empty = root[len(dir_path):]
                     empty_dir = os.path.basename(dir_path) + empty
+                    print(empty_dir, '空文件夹')
                     self.up_empty_dir(empty_dir)
                     continue
 
@@ -716,7 +753,9 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
                     file_abs_path = os.path.join(root, f)
                     print(file_abs_path, 999)
                     self.up_file_load(file_abs_path, dir_path)
-            box.information(self, '恭喜', '文件夹传输完成!')
+            dir_name = os.path.basename(dir_path)
+            self.statusBar.showMessage('文件夹<'+dir_name+'>上传完成', 5)
+            self.Oline = 0
         except Exception as f:
             print(f)
 
@@ -732,8 +771,8 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
             reg = reg.encode()
 
             reg_len = '{:<15}'.format(len(reg))
-            self.sock.send(reg_len.encode())
-            self.sock.send(reg)
+            sock_3.send(reg_len.encode())
+            sock_3.send(reg)
         except Exception as f:
             print(f)
 
@@ -755,8 +794,8 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
             reg = reg.encode()
 
             reg_len = '{:<15}'.format(len(reg))
-            self.sock.send(reg_len.encode())
-            self.sock.send(reg)
+            sock_3.send(reg_len.encode())
+            sock_3.send(reg)
             sum = 0
             # self.progressBar.setValue(sum)
             with open(file_path, 'rb')as s:
@@ -766,7 +805,7 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
                     if not data:
                         break
                     # self.progressBar.setValue(sum / visit)
-                    self.sock.send(data)
+                    sock_3.send(data)
         except Exception as d:
             print(d)
 
@@ -774,7 +813,8 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
 
 class Mydownfiles(QtWidgets.QMainWindow, Ui_Form7):
     '''下载文件'''
-
+    word = ''
+    local_name = ''
     def __init__(self):
         super(Mydownfiles, self).__init__()
         self.setupUi(self)
@@ -783,34 +823,157 @@ class Mydownfiles(QtWidgets.QMainWindow, Ui_Form7):
         self.showMinimized()
 
     def exit(self):
-        self.close()
+        self.hide()
 
     def down_files(self):
-        pass
+        '''开始下载'''
+        global FILE_PATH
+        try:
+            box = QtWidgets.QMessageBox
+            local_path = self.textBrowser.toPlainText()
+            FILE_PATH = os.path.join(local_path, self.word[5:])
+            print(FILE_PATH, '你')
+            if local_path == '':
+                box.warning(self, '提示', '您还未选择下载位置呢？')
+            else:
+                # self.textBrowser_2.clear()
+                # print(self.word[:4], '头')
+                if self.word[:4] == 'Dirs':
+                    dirs = dict()
+                    dirs['down_files'] = 'everyone'
+                    dirs['files_type'] = 'dirs'
+                    dirs['files_name'] = self.word[5:]
+                    dirs = json.dumps(dirs, ensure_ascii=False)
+                    dirs = dirs.encode()
+                    dirs_len = '{:<15}'.format(len(dirs))
+                    sock_3.send(dirs_len.encode())
+                    sock_3.send(dirs)
+                else:
+                    print('wenjian')
+                    files = dict()
+                    files['down_files'] = 'everyone'
+                    files['files_type'] = 'files'
+                    files['files_name'] = self.word[5:]
+                    files = json.dumps(files, ensure_ascii=False)
+                    files = files.encode()
+                    files_len = '{:<15}'.format(len(files))
+                    sock_3.send(files_len.encode())
+                    sock_3.send(files)
+                    print('fasong')
+        except Exception as f:
+            print(f)
+
+    def change(self, item):
+        '''选择下载的文件或者文件夹'''
+        try:
+            box = QtWidgets.QMessageBox()
+            if self.local_name == '':
+                box.warning(self, '提示', '请先选择保存位置!')
+            else:
+                self.local_name = self.textBrowser.toPlainText()
+                self.word = item.text()
+        except Exception as f:
+            print(f)
+
+    def choice(self):
+        '''选择文件保存地址'''
+        try:
+            self.textBrowser.clear()
+            self.progressBar.setValue(0)
+            self.textBrowser_2.clear()
+            dif = QFileDialog()
+            dif.setFileMode(QFileDialog.Directory)    #设置打开任意文件夹
+            dif.setFilter(QDir.Files)  #文件过滤
+            if dif.exec_():
+                # 接受选中文件的路径，默认为列表
+                dir_path = dif.selectedFiles()   #获得文件夹绝对路径
+                # file_name = os.path.basename(file_path[0])        #获得文件名
+            self.textBrowser.setText(dir_path[0])
+            self.local_name = dir_path[0]
+        except Exception as f:
+            print(f)
 
 
 
 class Mythread_3(QThread):    #发送文件
     signal = pyqtSignal(str)  # 设置触发信号传递的参数数据类型,这里是字符串
-
+    info = ''
+    M = 0
     def __init__(self):
         super(Mythread_3, self).__init__()
-
     def run(self):
-        while True:    #不停的接消息
-            while True:
-                fan_len = Mysendfile.sock.recv(15).decode()
-                if not len(fan_len):
-                    break
-                fan_len = int(fan_len.strip())
-                size = 0
-                tmp = b''
-                while size < fan_len:
-                    data = Mysendfile.sock.recv(fan_len - size)
-                    if not data:
+        try:
+            while True:    #不停的接消息
+                while True:
+                    fan_len = sock_3.recv(15).decode()
+                    if not len(fan_len):
                         break
-                    tmp += data
-                    size += len(data)
+                    fan_len = int(fan_len.strip())
+                    size = 0
+                    tmp = b''
+                    while size < fan_len:
+                        data = sock_3.recv(fan_len - size)
+                        if not data:
+                            break
+                        tmp += data
+                        size += len(data)
                     tmp = tmp.decode()
-                    self.signal.emit(str(tmp))    #把接到的消息返回
+                    if 'TO_send' in tmp:
+                        tmp = json.loads(tmp)
+                        if tmp['TO_send'] == 'everyone':
 
+                            if tmp['files_size'] == -1:  # 如果为空文件夹
+                                os.makedirs(os.path.join(FILE_PATH, tmp['files_name']), exist_ok=True)
+                                continue
+
+                            dir_file = os.path.dirname(tmp['files_name'])
+                            if len(dir_file) == 0:
+                                MyQtWidgets.DOWN[0].progressBar.setValue(0)
+                                MyQtWidgets.DOWN[0].textBrowser_2.append('文件名:'+tmp['files_name'])
+                                MyQtWidgets.DOWN[0].textBrowser_2.append('文件大小:'+str(tmp['files_size']))
+                                MyQtWidgets.DOWN[0].textBrowser_2.append('md5:'+str(tmp['files_md5']))
+                                recv_size = 0
+                                print(FILE_PATH, '哼')
+                                sum = tmp['files_size'] / 100
+                                with open(FILE_PATH, 'wb')as f:
+                                    while recv_size < tmp['files_size']:
+                                        file_tmp = sock_3.recv(tmp['files_size'] - recv_size)
+                                        if not file_tmp:
+                                            break
+                                        f.write(file_tmp)
+                                        recv_size += len(file_tmp)
+                                        MyQtWidgets.DOWN[0].progressBar.setValue(recv_size / sum)
+                                print(5)
+                                if self.file_md5(FILE_PATH) == tmp['files_md5']:
+                                    MyQtWidgets.DOWN[0].textBrowser_2.append('md5检验通过！下载成功！')
+                                else:
+                                    MyQtWidgets.DOWN[0].textBrowser_2.append('md5检验不通过！下载失败！')
+                            else:
+                                os.makedirs(os.path.join(MyQtWidgets.DOWN[0].textBrowser.toPlainText(), dir_file), exist_ok=True)
+                                if self.M == 0:
+                                    MyQtWidgets.DOWN[0].textBrowser_2.append('文件夹名:' + Mydownfiles.word[5:])
+                                    MyQtWidgets.DOWN[0].textBrowser_2.append('文件夹传输不提供进度显示,传输完成会有提示!')
+                                    self.M = 1
+                                recv_size = 0
+                                print(FILE_PATH, '哼')
+                                with open(os.path.join(MyQtWidgets.DOWN[0].textBrowser.toPlainText(), tmp['files_name']), 'wb')as f:
+                                    while recv_size < tmp['files_size']:
+                                        file_tmp = sock_3.recv(tmp['files_size'] - recv_size)
+                                        if not file_tmp:
+                                            break
+                                        f.write(file_tmp)
+                                        recv_size += len(file_tmp)
+                    else:
+                        self.signal.emit(str(tmp))    #把接到的消息返回
+        except Exception as d:
+            print(d)
+
+    def file_md5(self, file_path):
+        m = hashlib.md5()
+        with open(file_path, 'rb') as f:
+            while True:
+                data = f.read(1024)
+                if not data:
+                    break
+                m.update(data)
+        return m.hexdigest().upper()
