@@ -19,7 +19,7 @@ import re, time, threading
 import socket, json, hashlib
 
 sock_3 = socket.socket()
-
+server = json.load(open('./client_conf.json'))
 FILE_PATH = ''
 
 class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
@@ -36,10 +36,12 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
     people = []
     DOWN = []
 
+
     def __init__(self):
         super(MyQtWidgets, self).__init__()
         self.setupUi(self)
-        sock_3.connect(("47.100.253.248", 9995))
+        sock_3.connect(("47.100.253.248", server['server_port_3']))
+        print('是否连接3')
 
         self.mythread = MyThread()    #开启一个线程来接收消息
         self.mythread2 = MyThread_2()
@@ -47,14 +49,18 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
         self.mythread2.signal.connect(self.callback2)
         self.mythread.start()
         self.mythread2.start()
+
+
+
+        self.mythread3 = Mythread_3()
+        self.mythread3.signal.connect(self.callback3)
+        self.mythread3.start()
         self.info6 = Mysendfile()
         self.info5 = Mydownfiles()
         self.info7 = Mynotice()
         MyQtWidgets.DOWN.append(self.info5)
 
-        self.mythread3 = Mythread_3()
-        self.mythread3.signal.connect(self.callback3)
-        self.mythread3.start()
+
 
 
     def callback(self, tmp):  # 这里的 i 就是任务线程传回的数据
@@ -63,7 +69,7 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
                 tmp = json.loads(tmp)
                 list = tmp['active_people']     #在线人数列表
                 peoples = '在线人数:' + str(len(list)) + '人'
-                self.textBrowser_4.setText(peoples)
+                self.lineEdit_4.setText(peoples)
                 for k, p in enumerate(list):
                     if p not in MyQtWidgets.people:
                         self.listWidget.addItem(p)
@@ -143,7 +149,7 @@ class MyQtWidgets(QtWidgets.QMainWindow,Ui_Form1):
             print(f)
 
     def callback2(self, now_time):  # 这里的 i 就是任务线程传回的数据
-        self.textBrowser_5.setText(now_time)
+        self.lineEdit_5.setText(now_time)
 
 
     def callback3(self, tmp):
@@ -291,8 +297,10 @@ class MyThread(QThread):
     def __init__(self):
         super(MyThread, self).__init__()
 
+
     def run(self):  # 在启动线程后任务从这个函数里面开始执行
-        self.sock.connect(('47.100.253.248', 9996))
+        self.sock.connect(('47.100.253.248', server['server_port_2']))
+        print('是否连接2')
         while True:    #不停的接消息
             while True:
                 fan_len = self.sock.recv(15).decode()
@@ -616,9 +624,6 @@ class Mysendfile(QtWidgets.QMainWindow, Ui_Form8):
         self.setupUi(self)
 
         # self.sock.connect(('47.100.253.248', 9995))
-        print('端口3已连接')
-
-
 
 
     def min(self):

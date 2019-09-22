@@ -1,4 +1,6 @@
 {
   "server_IP": "47.100.253.248",
-  "server_port": 9999
+  "server_port_1": 9997,
+  "server_port_2": 9994,
+  "server_port_3": 9995
 }

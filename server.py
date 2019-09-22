@@ -619,8 +619,8 @@ def recv_files(conn, nick_name):
 
     finally:
         File_list.remove([conn, nick_name])
-        # conn.close()
-
+        conn.close()
+        print('端口3连接关闭')
 
 def check_md5(file_name):
     m = hashlib.md5()

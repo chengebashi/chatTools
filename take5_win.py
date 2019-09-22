@@ -54,32 +54,34 @@ class Ui_Form1(object):
         self.textBrowser.setGraphicsEffect(op)
         self.textBrowser.setAutoFillBackground(True)
 
-        self.textBrowser_2 = QtWidgets.QTextBrowser(self.frame)
-        self.textBrowser_2.setGeometry(QtCore.QRect(560, 70, 281, 30))
+        self.lineEdit_2 = QtWidgets.QLineEdit(self.frame)
+        self.lineEdit_2.setGeometry(QtCore.QRect(560, 70, 281, 30))
         font = QtGui.QFont()
         font.setFamily("幼圆")
         font.setPointSize(12)
-        self.textBrowser_2.setFont(font)
-        self.textBrowser_2.setStyleSheet("border:none;\n"
+        self.lineEdit_2.setFont(font)
+        self.lineEdit_2.setStyleSheet("border:none;\n"
 "\n"
 "")
-        self.textBrowser_2.setObjectName("textBrowser_2")
+        self.lineEdit_2.setObjectName("lineEdit_2")
+        self.lineEdit_2.setFocusPolicy(QtCore.Qt.NoFocus)       #设置无法获得焦点即无法编辑
 
         op = QtWidgets.QGraphicsOpacityEffect()
         op.setOpacity(0.7)
-        self.textBrowser_2.setGraphicsEffect(op)
-        self.textBrowser_2.setAutoFillBackground(True)
+        self.lineEdit_2.setGraphicsEffect(op)
+        self.lineEdit_2.setAutoFillBackground(True)
 
-        self.textBrowser_4 = QtWidgets.QTextBrowser(self.frame)
-        self.textBrowser_4.setGeometry(QtCore.QRect(620, 30, 151, 30))
+        self.lineEdit_4 = QtWidgets.QLineEdit(self.frame)
+        self.lineEdit_4.setGeometry(QtCore.QRect(620, 30, 151, 30))
         font = QtGui.QFont()
         font.setFamily("幼圆")
         font.setPointSize(12)
-        self.textBrowser_4.setFont(font)
-        self.textBrowser_4.setStyleSheet("border:none;\n"
+        self.lineEdit_4.setFont(font)
+        self.lineEdit_4.setStyleSheet("border:none;\n"
                                          "background-color:transparent;\n"
                                          "")
-        self.textBrowser_4.setObjectName("textBrowser_4")
+        self.lineEdit_4.setObjectName("lineEdit_4")
+        self.lineEdit_4.setFocusPolicy(QtCore.Qt.NoFocus)
 
 
         self.fontComboBox = QtWidgets.QFontComboBox(self.frame)
@@ -181,14 +183,15 @@ class Ui_Form1(object):
         self.pushButton.setStyleSheet("border-radius:12px;\n"
 "background-color: rgb(255, 95, 90);")
         self.pushButton.setObjectName("pushButton")
-        self.textBrowser_3 = QtWidgets.QTextBrowser(self.frame_2)
-        self.textBrowser_3.setGeometry(QtCore.QRect(310, 10, 171, 41))
+        self.lineEdit_3 = QtWidgets.QLineEdit(self.frame_2)
+        self.lineEdit_3.setGeometry(QtCore.QRect(310, 10, 171, 41))
         font = QtGui.QFont()
         font.setFamily("幼圆")
-        font.setPointSize(12)
-        self.textBrowser_3.setFont(font)
-        self.textBrowser_3.setStyleSheet("border:none;")
-        self.textBrowser_3.setObjectName("textBrowser_3")
+        font.setPointSize(14)
+        self.lineEdit_3.setFont(font)
+        self.lineEdit_3.setStyleSheet("border:none;")
+        self.lineEdit_3.setObjectName("lineEdit_3")
+        self.lineEdit_3.setFocusPolicy(QtCore.Qt.NoFocus)
 
         self.frame_3 = QtWidgets.QFrame(self.frame)
         self.frame_3.setGeometry(QtCore.QRect(20, 640, 821, 51))
@@ -220,16 +223,17 @@ class Ui_Form1(object):
         self.pushButton_2.setFont(font)
         self.pushButton_2.setStyleSheet("background-image: url(:/newPrefix/button.png);border-radius:10px;")
         self.pushButton_2.setObjectName("pushButton_2")
-        self.textBrowser_5 = QtWidgets.QTextBrowser(self.frame_3)
-        self.textBrowser_5.setGeometry(QtCore.QRect(540, 15, 281, 41))
+        self.lineEdit_5 = QtWidgets.QTextBrowser(self.frame_3)
+        self.lineEdit_5.setGeometry(QtCore.QRect(540, 15, 281, 41))
         font = QtGui.QFont()
         font.setFamily("幼圆")
         font.setPointSize(12)
-        self.textBrowser_5.setFont(font)
-        self.textBrowser_5.setStyleSheet("border:none;\n"
+        self.lineEdit_5.setFont(font)
+        self.lineEdit_5.setStyleSheet("border:none;\n"
 "background:transparent;\n"
 "")
-        self.textBrowser_5.setObjectName("textBrowser_5")
+        self.lineEdit_5.setObjectName("lineEdit_5")
+        self.lineEdit_5.setFocusPolicy(QtCore.Qt.NoFocus)
 
 
 
@@ -321,28 +325,14 @@ class Ui_Form1(object):
 "p, li { white-space: pre-wrap; }\n"
 "</style></head><body style=\" font-family:\'幼圆\'; font-size:13pt; font-weight:400; font-style:normal;\">\n"
 "<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:14pt;\"><br /></p></body></html>"))
-        self.textBrowser_2.setHtml(_translate("Form", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'幼圆\'; font-size:12pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">用 户 名</p></body></html>"))
+        self.lineEdit_2.setText(_translate("Form", "用 户 名"))
 
         self.fontComboBox.setCurrentText(_translate("Form", "幼圆"))
         self.pushButton_6.setText(_translate("Form", "聊天记录"))
         self.pushButton_5.setText(_translate("Form", "-"))
         # self.pushButton_7.setText(_translate("Form", "123313"))
         self.pushButton.setText(_translate("Form", "x"))
-        self.textBrowser_3.setHtml(_translate("Form", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'幼圆\'; font-size:12pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:14pt; color:#000000;\">班级群聊室</span></p></body></html>"))
+        self.lineEdit_3.setText(_translate("Form", "班级聊天室"))
         self.pushButton_4.setText(_translate("Form", "发送文件"))
         self.pushButton_3.setText(_translate("Form", "下载文件"))
         self.pushButton_2.setText(_translate("Form", "发送消息"))
-        self.textBrowser_5.setHtml(_translate("Form", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'幼圆\'; font-size:10pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\"-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:12pt;\"><br /></p></body></html>"))
-

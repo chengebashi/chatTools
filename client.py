@@ -2,9 +2,9 @@ import socket
 import json,hashlib
 import re
 
-
+server = json.load(open('./client_conf.json'))
 sock = socket.socket()
-sock.connect(("47.100.253.248", 9997))
+sock.connect(("47.100.253.248", server['server_port_1']))
 
 
 def login(arg):
@@ -21,7 +21,6 @@ def login(arg):
     ret_len = int(ret_len.strip())
 
     ret = recved_main(ret_len)   #接收报文长度
-
     ret = json.loads(ret)
     back = ret["return"]
 
